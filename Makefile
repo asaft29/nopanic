@@ -103,6 +103,14 @@ client-wizard:
 	cargo run -p tor-client -- --tui \
 		--directory-url $(DISCOVERY_URL) --socks-addr $(SOCKS_ADDR)
 
+# ── Tor Client — Droplet (remote discovery at 209.38.198.24) ─────────────────
+
+.PHONY: client-droplet
+
+client-droplet:
+	cargo run -p tor-client -- --tui --hops $(HOPS) --pool-size $(POOL) \
+		--directory-url http://209.38.198.24:8080 --socks-addr $(SOCKS_ADDR)
+
 # ── Demos ────────────────────────────────────────────────────────────────────
 
 .PHONY: demo demo-rotation
