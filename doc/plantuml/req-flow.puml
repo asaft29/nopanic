@@ -6,16 +6,32 @@ skinparam sequence {
     LifeLineBorderColor #BDC3C7
 }
 
-title User Request Flow
+title User Request Flow through Onion Routing System
 
 actor Browser
-participant "Tor Client Service" as Client #2ECC71
-participant "Directory\nService" as Directory #F39C12
-participant "Onion\nEncryptor" as Crypto #E74C3C
-participant "Entry Node Service" as Entry #8E44AD
-participant "Middle Node Service" as Middle #9B59B6
-participant "Exit Node Service" as Exit #A569BD
+participant "Tor Client" as Client #2ECC71
+participant "Discovery\nService (gRPC)" as Discovery #F39C12
+participant "Entry Relay" as Entry #8E44AD
+participant "Middle Relay" as Middle #9B59B6
+participant "Exit Relay" as Exit #A569BD
 participant "Website" as Web #1ABC9C
+
+== Relay Registration ==
+
+Entry -> Discovery: RegisterNode RPC
+activate Discovery
+Discovery --> Entry: Registered
+deactivate Discovery
+
+Middle -> Discovery: RegisterNode RPC
+activate Discovery
+Discovery --> Middle: Registered
+deactivate Discovery
+
+Exit -> Discovery: RegisterNode RPC
+activate Discovery
+Discovery --> Exit: Registered
+deactivate Discovery
 
 == Node Discovery ==
 
@@ -23,44 +39,41 @@ Browser -> Client: SOCKS5 CONNECT\nexample.com:443
 activate Browser
 activate Client
 
-Client -> Directory: GET /nodes
-activate Directory
-Directory --> Client: Available nodes list
-deactivate Directory
+Client -> Discovery: GetRandomPath(count=3) RPC
+activate Discovery
+Discovery --> Client: [Entry, Middle, Exit]\nnode descriptors
+deactivate Discovery
 
-Client -> Client: Select path:\nEntry → Middle → Exit
+Client -> Client: Build circuit:\nCREATE -> Entry\nEXTEND -> Middle\nEXTEND -> Exit
 
 == Request Phase ==
 
-Client -> Crypto: Encrypt data in 3 layers
-activate Crypto
-note right of Crypto
-  Layer 1: Exit key
-  Layer 2: Middle key
-  Layer 3: Entry key
+Client -> Client: onion_encrypt(data, 3 layers)
+note right of Client
+  Layer 1 (outer): Entry key
+  Layer 2 (middle): Middle key
+  Layer 3 (inner): Exit key
 end note
-Crypto --> Client: Triple encrypted data
-deactivate Crypto
 
-Client -> Entry: TCP Send\n[E(E(E(data)))]
+Client -> Entry: TCP Send cell\n[E1(E2(E3(data)))]
 activate Entry
 
-Entry -> Entry: Decrypt outer layer
-note right: Result: [E(E(data))]
+Entry -> Entry: Decrypt outer layer\n(stateful AES-128-CTR)
+note right: Result: [E2(E3(data))]
 
-Entry -> Middle: TCP Forward\n[E(E(data))]
+Entry -> Middle: TCP Forward cell\n[E2(E3(data))]
 activate Middle
 
-Middle -> Middle: Decrypt middle layer
-note right: Result: [E(data)]
+Middle -> Middle: Decrypt middle layer\n(stateful AES-128-CTR)
+note right: Result: [E3(data)]
 
-Middle -> Exit: TCP Forward\n[E(data)]
+Middle -> Exit: TCP Forward cell\n[E3(data)]
 activate Exit
 
-Exit -> Exit: Decrypt final layer
+Exit -> Exit: Decrypt inner layer\n(stateful AES-128-CTR)
 note right: Result: Plaintext
 
-Exit -> Web: HTTP Request\nGET / HTTP/1.1
+Exit -> Web: TCP Connect + HTTP Request
 activate Web
 
 Web --> Exit: HTTP Response\n200 OK + HTML
@@ -68,22 +81,23 @@ deactivate Web
 
 == Response Phase ==
 
-Exit -> Exit: Encrypt with exit_key
-Exit -> Middle: TCP Send\n[E(response)]
+Exit -> Exit: Encrypt with exit key\n(stateful AES-128-CTR)
+Exit -> Middle: TCP Send cell\n[E3(response)]
 deactivate Exit
 
-Middle -> Middle: Encrypt with middle_key
-Middle -> Entry: TCP Send\n[E(E(response))]
+Middle -> Middle: Encrypt with middle key\n(stateful AES-128-CTR)
+Middle -> Entry: TCP Send cell\n[E2(E3(response))]
 deactivate Middle
 
-Entry -> Entry: Encrypt with entry_key
-Entry -> Client: TCP Send\n[E(E(E(response)))]
+Entry -> Entry: Encrypt with entry key\n(stateful AES-128-CTR)
+Entry -> Client: TCP Send cell\n[E1(E2(E3(response)))]
 deactivate Entry
 
-Client -> Crypto: Decrypt all 3 layers
-activate Crypto
-Crypto --> Client: Plaintext response
-deactivate Crypto
+Client -> Client: onion_decrypt(data, 3 layers)
+note right of Client
+  Reverse order:
+  Layer 1 (entry) -> Layer 2 (middle) -> Layer 3 (exit)
+end note
 
 Client --> Browser: SOCKS5 Response\nHTML content
 deactivate Client

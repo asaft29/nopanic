@@ -25,5 +25,7 @@ services/*/data/
 *.log
 .env
 *.md
+referat/
+lucrare/
 todo.txt
 
