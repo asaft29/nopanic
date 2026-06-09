@@ -1816,7 +1816,6 @@ dependencies = [
  "serde",
  "sha2",
  "tokio",
- "tokio-rustls",
  "tonic",
  "tor-llcrypto",
  "tracing",

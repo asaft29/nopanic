@@ -3,8 +3,12 @@ name = "relay-node"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["tls"]
+tls = ["common/tls"]
+
 [dependencies]
-common = { path = "../common" }
+common = { path = "../common", default-features = false }
 proto = { path = "../proto" }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
@@ -20,7 +24,6 @@ tor-llcrypto = "0.23"
 sha2 = "0.10"
 ratatui = "0.29"
 crossterm = "0.28"
-tokio-rustls = "0.26"
 
 [lints]
 workspace = true

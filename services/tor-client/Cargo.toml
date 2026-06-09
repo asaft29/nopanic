@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.101"
 clap = { version = "4.5.57", features = ["derive"] }
-common = { path = "../common" }
+common = { path = "../common", default-features = false }
 proto = { path = "../proto" }
 rand = "0.9.2"
 tonic = "0.12"
@@ -24,7 +24,7 @@ workspace = true
 
 [features]
 default = ["tls"]
-tls = []
+tls = ["common/tls"]
 
 [dev-dependencies]
 tor-llcrypto = "0.23"

@@ -2,11 +2,12 @@ use crate::circuit::handler::{CircuitContext, CircuitState, NextHop};
 use crate::core::keypair::KeyPair;
 use crate::core::metrics::{EventKind, RelayMetrics};
 use common::{
-    RelayStream, RelayTlsConfig,
+    RelayStream,
     crypto::SessionKey,
     protocol::{CircuitId, Message, MessageCommand},
-    server_name_from_addr,
 };
+#[cfg(feature = "tls")]
+use common::{RelayTlsConfig, server_name_from_addr};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -116,6 +117,7 @@ impl MiddleCircuitHandler {
                 "EXTEND payload missing fingerprint separator"
             ));
         }
+        #[cfg_attr(not(feature = "tls"), allow(unused_variables))]
         let fingerprint = std::str::from_utf8(
             decrypted
                 .get(key_end + 1..)
@@ -132,11 +134,21 @@ impl MiddleCircuitHandler {
         let tcp_stream = TcpStream::connect(addr_str).await?;
         debug!("Middle: TCP connected to next hop at {}", addr);
 
-        let connector = RelayTlsConfig::make_tls_connector(fingerprint)?;
-        let server_name = server_name_from_addr(addr);
-        let tls_stream = connector.connect(server_name, tcp_stream).await?;
-        let mut stream: RelayStream = Box::new(tls_stream);
+        #[cfg(feature = "tls")]
+        let mut stream: RelayStream = {
+            let connector = RelayTlsConfig::make_tls_connector(fingerprint)?;
+            let server_name = server_name_from_addr(addr);
+            let tls_stream = connector.connect(server_name, tcp_stream).await?;
+            Box::new(tls_stream)
+        };
+
+        #[cfg(not(feature = "tls"))]
+        let mut stream: RelayStream = Box::new(tcp_stream);
+
+        #[cfg(feature = "tls")]
         debug!("Middle: TLS connected to next hop at {}", addr);
+        #[cfg(not(feature = "tls"))]
+        debug!("Middle: raw TCP connected to next hop at {}", addr);
 
         let create_msg = Message::create(self.context.circuit_id, client_public.to_vec());
 
@@ -426,6 +438,7 @@ impl MiddleCircuitHandler {
 mod tests {
     use super::*;
     use crate::circuit::handler::CircuitState;
+    #[cfg(feature = "tls")]
     use common::RelayTlsConfig;
     use common::crypto::{CipherPair, NtorEphemeralKeyPair, ntor_client_finish_raw};
     use tokio::net::TcpListener;
@@ -536,6 +549,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "tls")]
     async fn test_middle_extend_to_exit_over_tcp() {
         let exit_keypair = KeyPair::generate();
 

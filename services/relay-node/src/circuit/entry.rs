@@ -2,11 +2,12 @@ use crate::circuit::handler::{CircuitContext, CircuitState, NextHop};
 use crate::core::keypair::KeyPair;
 use crate::core::metrics::{EventKind, RelayMetrics};
 use common::{
-    RelayStream, RelayTlsConfig,
+    RelayStream,
     crypto::SessionKey,
     protocol::{CircuitId, Message, MessageCommand},
-    server_name_from_addr,
 };
+#[cfg(feature = "tls")]
+use common::{RelayTlsConfig, server_name_from_addr};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -138,12 +139,22 @@ impl EntryCircuitHandler {
 
         let addr: SocketAddr = addr_str.parse()?;
         let tcp_stream = TcpStream::connect(addr).await?;
-        let connector = RelayTlsConfig::make_tls_connector(fingerprint)?;
-        let server_name = server_name_from_addr(addr);
-        let tls_stream = connector.connect(server_name, tcp_stream).await?;
-        let mut next_hop_stream: RelayStream = Box::new(tls_stream);
 
+        #[cfg(feature = "tls")]
+        let mut next_hop_stream: RelayStream = {
+            let connector = RelayTlsConfig::make_tls_connector(fingerprint)?;
+            let server_name = server_name_from_addr(addr);
+            let tls_stream = connector.connect(server_name, tcp_stream).await?;
+            Box::new(tls_stream)
+        };
+
+        #[cfg(not(feature = "tls"))]
+        let mut next_hop_stream: RelayStream = Box::new(tcp_stream);
+
+        #[cfg(feature = "tls")]
         info!("Entry: Connected to next hop {} via TLS", addr_str);
+        #[cfg(not(feature = "tls"))]
+        info!("Entry: Connected to next hop {} via raw TCP", addr_str);
 
         let create_msg = Message::create(self.context.circuit_id, client_public.to_vec());
 
@@ -407,8 +418,10 @@ impl EntryCircuitHandler {
 mod tests {
     use super::*;
     use crate::circuit::handler::CircuitState;
+    use common::RelayStream;
+    #[cfg(feature = "tls")]
+    use common::RelayTlsConfig;
     use common::crypto::{CipherPair, NtorEphemeralKeyPair, ntor_client_finish_raw};
-    use common::{RelayStream, RelayTlsConfig};
     use tokio::net::TcpListener;
 
     async fn do_ntor_create(
@@ -527,6 +540,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "tls")]
     async fn test_entry_extend_to_middle_over_tls() {
         let middle_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let middle_addr = middle_listener.local_addr().unwrap();
