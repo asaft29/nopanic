@@ -9,7 +9,7 @@ use tor_client::core::circuit::{
 };
 use tor_client::core::config::{MAX_HOPS, TorClientConfig};
 use tor_client::core::metrics::ClientMetrics;
-use tor_client::core::transport::TcpTlsTransport;
+use tor_client::core::transport::create_transport;
 use tracing::{error, info};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 
@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     let metrics = ClientMetrics::new();
 
     let directory_client = Arc::new(DirectoryClient::new(config.directory_url.clone()).await?);
-    let transport = Arc::new(TcpTlsTransport);
+    let transport = create_transport();
     let handshaker = Arc::new(TorNtorHandshaker);
     let mut pool = CircuitPool::new(
         directory_client,

@@ -22,6 +22,10 @@ crossterm = "0.28"
 [lints]
 workspace = true
 
+[features]
+default = ["tls"]
+tls = []
+
 [dev-dependencies]
 tor-llcrypto = "0.23"
 sha2 = "0.10"

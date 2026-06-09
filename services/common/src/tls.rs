@@ -34,6 +34,37 @@ impl StreamAcceptor for TlsAcceptor {
     }
 }
 
+/// Raw TCP acceptor — no TLS wrapping.
+/// Used in development mode when TLS is disabled via Cargo features.
+pub struct RawTcpAcceptor;
+
+#[async_trait]
+impl StreamAcceptor for RawTcpAcceptor {
+    async fn accept(&self, tcp: tokio::net::TcpStream) -> Result<crate::RelayStream> {
+        Ok(Box::new(tcp))
+    }
+}
+
+/// Factory: returns a stream acceptor and TLS fingerprint.
+/// With TLS enabled (default), generates a self-signed certificate.
+/// Without TLS, returns a raw TCP acceptor and an empty fingerprint.
+#[cfg(feature = "tls")]
+pub fn create_acceptor(
+    node_id: &str,
+    addr: SocketAddr,
+) -> Result<(Arc<dyn StreamAcceptor>, String)> {
+    let config = RelayTlsConfig::generate(node_id, addr)?;
+    Ok((config.acceptor, config.fingerprint))
+}
+
+#[cfg(not(feature = "tls"))]
+pub fn create_acceptor(
+    _node_id: &str,
+    _addr: SocketAddr,
+) -> Result<(Arc<dyn StreamAcceptor>, String)> {
+    Ok((Arc::new(RawTcpAcceptor), String::new()))
+}
+
 pub struct RelayTlsConfig {
     pub fingerprint: String,
     pub acceptor: Arc<dyn StreamAcceptor>,

@@ -8,9 +8,7 @@ use circuit::{
     CircuitHandler, CircuitRegistry, EntryCircuitHandler, ExitCircuitHandler, MiddleCircuitHandler,
 };
 use clap::Parser;
-use common::{
-    NodeDescriptor, NodeMetrics, RelayStream, RelayTlsConfig, RelayWriteHalf, protocol::Message,
-};
+use common::{NodeDescriptor, NodeMetrics, RelayStream, RelayWriteHalf, protocol::Message};
 use core::config::RelayConfig;
 use core::keypair::KeyPair;
 use core::metrics::{EventKind, RelayMetrics};
@@ -74,9 +72,11 @@ async fn main() -> Result<()> {
     let node_id = Uuid::new_v4().to_string();
     info!("  Node ID: {}", node_id);
 
-    let tls_config = RelayTlsConfig::generate(&node_id, bind_addr)
-        .context("Failed to generate TLS certificate")?;
-    info!("  TLS fingerprint: {}", tls_config.fingerprint);
+    let (acceptor, tls_fingerprint) = common::tls::create_acceptor(&node_id, bind_addr)
+        .context("Failed to create stream acceptor")?;
+    if !tls_fingerprint.is_empty() {
+        info!("  TLS fingerprint: {}", tls_fingerprint);
+    }
 
     let descriptor = NodeDescriptor {
         node_id: node_id.clone(),
@@ -86,7 +86,7 @@ async fn main() -> Result<()> {
         bandwidth: config.bandwidth,
         exit_policy: config.exit_policy(node_type),
         operator_id: config.operator_id.clone(),
-        tls_cert_fingerprint: tls_config.fingerprint.clone(),
+        tls_cert_fingerprint: tls_fingerprint,
     };
 
     let channel = tonic::transport::Channel::from_shared(config.directory_url.clone())?
@@ -117,7 +117,7 @@ async fn main() -> Result<()> {
         keypair,
         node_type,
         relay_metrics.clone(),
-        tls_config.acceptor,
+        acceptor,
         500,
     ));
 
