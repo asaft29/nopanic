@@ -13,19 +13,6 @@ ifitcompiles.tech {
         Referrer-Policy "no-referrer"
     }
 
-    request_body {
-        max_size 1MB
-    }
-
-    servers {
-        timeouts {
-            read_body 5s
-            read_header 5s
-            write 10s
-            idle 30s
-        }
-    }
-
     reverse_proxy discovery:8081
 }
 
@@ -37,10 +24,6 @@ localhost:8443 {
     log {
         output stdout
         format json
-    }
-
-    request_body {
-        max_size 1MB
     }
 
     reverse_proxy discovery:8081
