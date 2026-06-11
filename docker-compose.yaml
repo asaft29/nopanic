@@ -27,6 +27,8 @@ services:
     container_name: tor-discovery
     ports:
       - "8080:8080"
+    expose:
+      - "8081"
     volumes:
       - discovery-data:/app/data
     environment:
@@ -160,8 +162,27 @@ services:
       tor-network:
         ipv4_address: 172.30.0.20
 
+  # ---- Caddy (HTTPS reverse proxy for dashboard) ----
+  caddy:
+    image: caddy:latest
+    container_name: tor-caddy
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      discovery:
+        condition: service_healthy
+    networks:
+      tor-network:
+        ipv4_address: 172.30.0.5
+    restart: unless-stopped
+
 volumes:
   discovery-data:
+    driver: local
+  caddy-data:
     driver: local
 
 networks:

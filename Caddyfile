@@ -1,0 +1,55 @@
+ifitcompiles.tech {
+    encode zstd gzip
+
+    rate_limit {
+        zone dashboard {
+            key {remote_host}
+            events 60
+            window 1m
+        }
+    }
+
+    log {
+        output stdout
+        format json
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "no-referrer"
+    }
+
+    request_body {
+        max_size 1MB
+    }
+
+    servers {
+        timeouts {
+            read_body 5s
+            read_header 5s
+            write 10s
+            idle 30s
+        }
+    }
+
+    reverse_proxy discovery:8081
+}
+
+localhost:8443 {
+    tls internal
+
+    encode zstd gzip
+
+    log {
+        output stdout
+        format json
+    }
+
+    request_body {
+        max_size 1MB
+    }
+
+    reverse_proxy discovery:8081
+}

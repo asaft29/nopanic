@@ -9,7 +9,7 @@
 #   docker compose -f docker-compose.do.yaml down
 #
 # Verify:
-#   curl http://<droplet-ip>:8081                    # web UI
+#   curl https://<your-domain>:443                  # web UI (Caddy HTTPS)
 #   grpcurl -plaintext <droplet-ip>:8080 list        # gRPC services
 
 services:
@@ -19,7 +19,6 @@ services:
     container_name: tor-discovery
     ports:
       - "8080:8080"
-      - "8081:8081"
     command:
       - "discovery"
       - "--host"
@@ -291,6 +290,27 @@ services:
     restart: unless-stopped
     networks:
       - tor-network
+
+  # ---- Caddy (HTTPS reverse proxy for dashboard) ----
+  caddy:
+    image: caddy:latest
+    container_name: tor-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      discovery:
+        condition: service_healthy
+    networks:
+      - tor-network
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+    driver: local
 
 networks:
   tor-network:
