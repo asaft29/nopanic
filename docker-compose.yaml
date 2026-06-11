@@ -171,6 +171,8 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
+    environment:
+      - DOMAIN=localhost
     depends_on:
       discovery:
         condition: service_healthy

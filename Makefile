@@ -32,6 +32,9 @@ HOPS           ?= 3
 POOL           ?= 3
 SOCKS_ADDR     ?= 127.0.0.1:1080
 
+DROPLET_IP     ?= 127.0.0.1
+# Override:  make client-droplet DROPLET_IP=209.38.198.24
+
 N              ?= 3
 
 ALLOW_SAME_IP  ?= --allow-same-ip
@@ -103,13 +106,13 @@ client-wizard:
 	cargo run -p tor-client -- --tui \
 		--directory-url $(DISCOVERY_URL) --socks-addr $(SOCKS_ADDR)
 
-# ── Tor Client — Droplet (remote discovery at 209.38.198.24) ─────────────────
+# ── Tor Client — Droplet (remote discovery) ─────────────────────────────────
 
 .PHONY: client-droplet
 
 client-droplet:
 	cargo run -p tor-client -- --tui --hops $(HOPS) --pool-size $(POOL) \
-		--directory-url http://209.38.198.24:8080 --socks-addr $(SOCKS_ADDR)
+		--directory-url http://$(DROPLET_IP):8080 --socks-addr $(SOCKS_ADDR)
 
 # ── Demos ────────────────────────────────────────────────────────────────────
 

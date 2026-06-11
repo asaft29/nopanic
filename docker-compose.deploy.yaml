@@ -3,14 +3,18 @@
 # Launches 1 discovery service + 9 relay nodes on a single droplet.
 # The tor-client runs locally on your machine, not on the droplet.
 #
+# Requires a .env file in the same directory:
+#   PUBLIC_IP=<droplet-ip>
+#   DOMAIN=<your-domain>
+#
 # Usage:
-#   PUBLIC_IP=<droplet-ip> docker compose -f docker-compose.do.yaml up -d --build
+#   docker compose -f docker-compose.do.yaml up -d
 #   docker compose -f docker-compose.do.yaml logs -f
 #   docker compose -f docker-compose.do.yaml down
 #
 # Verify:
-#   curl https://<your-domain>:443                  # web UI (Caddy HTTPS)
-#   grpcurl -plaintext <droplet-ip>:8080 list        # gRPC services
+#   curl https://<your-domain>                         # web UI (Caddy HTTPS)
+#   grpcurl -plaintext <droplet-ip>:8080 list          # gRPC services
 
 services:
   # ---- Discovery Service ----
@@ -301,6 +305,8 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
+    environment:
+      - DOMAIN=${DOMAIN}
     depends_on:
       discovery:
         condition: service_healthy

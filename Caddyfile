@@ -1,4 +1,4 @@
-ifitcompiles.tech {
+{$DOMAIN} {
     encode zstd gzip
 
     log {
@@ -11,19 +11,6 @@ ifitcompiles.tech {
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "no-referrer"
-    }
-
-    reverse_proxy discovery:8081
-}
-
-localhost:8443 {
-    tls internal
-
-    encode zstd gzip
-
-    log {
-        output stdout
-        format json
     }
 
     reverse_proxy discovery:8081
