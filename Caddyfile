@@ -1,14 +1,6 @@
 ifitcompiles.tech {
     encode zstd gzip
 
-    rate_limit {
-        zone dashboard {
-            key {remote_host}
-            events 60
-            window 1m
-        }
-    }
-
     log {
         output stdout
         format json
