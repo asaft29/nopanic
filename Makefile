@@ -19,6 +19,9 @@
 #
 # All values are overridable:  make relay-entry-tui PORT=9005
 
+include .env
+export
+
 # ── Default ports ────────────────────────────────────────────────────────────
 
 DISCOVERY_PORT ?= 8080
@@ -32,8 +35,8 @@ HOPS           ?= 3
 POOL           ?= 3
 SOCKS_ADDR     ?= 127.0.0.1:1080
 
-DROPLET_IP     ?= 127.0.0.1
-# Override:  make client-droplet DROPLET_IP=209.38.198.24
+PUBLIC_IP      ?= 127.0.0.1
+# Override:  make client-droplet PUBLIC_IP=209.38.198.24
 
 N              ?= 3
 
@@ -112,7 +115,7 @@ client-wizard:
 
 client-droplet:
 	cargo run -p tor-client -- --tui --hops $(HOPS) --pool-size $(POOL) \
-		--directory-url http://$(DROPLET_IP):8080 --socks-addr $(SOCKS_ADDR)
+		--directory-url http://$(PUBLIC_IP):8080 --socks-addr $(SOCKS_ADDR)
 
 # ── Demos ────────────────────────────────────────────────────────────────────
 
