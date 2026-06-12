@@ -279,7 +279,7 @@ fn AboutPage() -> impl IntoView {
                 "that build encrypted three-hop circuits using ntor authenticated "
                 "key exchange, and a SOCKS5 client that tunnels traffic over the "
                 "network. Every message travels in fixed-size 514-byte cells with "
-                "AES-128-CTR encryption and SHA-256 digest integrity. A live "
+                "AES-128-CTR encryption and SHA-256 digest integrity. "
                 "Nine relay nodes run on a DigitalOcean droplet (three entry, "
                 "three middle, three exit) behind a "
                 <a href="https://github.com/caddyserver/caddy" target="_blank">"Caddy"</a>
