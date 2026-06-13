@@ -274,6 +274,7 @@ async fn spawn_entry_multi(
     addr
 }
 
+#[allow(clippy::too_many_arguments)]
 fn make_3_hop_path(
     entry_addr: std::net::SocketAddr,
     middle_addr: std::net::SocketAddr,
