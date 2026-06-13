@@ -122,14 +122,6 @@ async fn fetch_dashboard() -> Option<DashboardData> {
 
 // ── Formatting helpers ────────────────────────────────────────────
 
-fn format_bandwidth(bps: u64) -> String {
-    const KB: u64 = 1024;
-    const MB: u64 = 1024 * KB;
-    if bps >= MB { format!("{:.1} MB/s", bps as f64 / MB as f64) }
-    else if bps >= KB { format!("{:.1} KB/s", bps as f64 / KB as f64) }
-    else { format!("{bps} B/s") }
-}
-
 fn format_bytes(bytes: u64) -> String {
     const KB: u64 = 1024;
     const MB: u64 = 1024 * KB;
@@ -274,7 +266,7 @@ fn AboutPage() -> impl IntoView {
             <p>
                 "Under the hood, "
                 <a href="https://github.com/asaft29/nopanic" target="_blank"><span class="brand-name">"nopanic"</span></a>
-                " runs as four microservices: a gRPC "
+                " runs as three microservices: a gRPC "
                 "discovery service that tracks live relay nodes, relay nodes "
                 "that build encrypted three-hop circuits using ntor authenticated "
                 "key exchange, and a SOCKS5 client that tunnels traffic over the "
@@ -287,7 +279,7 @@ fn AboutPage() -> impl IntoView {
             </p>
             <p>
                 <a href="https://github.com/asaft29/nopanic" target="_blank"><span class="brand-name">"nopanic"</span></a>
-                " also features a compile-time TLS / raw TCP toggle, a "
+                " also features a feature-gated transport layer supporting TLS and raw TCP modes, a "
                 "live web dashboard, and interactive TUI dashboards built with "
                 <a href="https://ratatui.rs" target="_blank">"ratatui"</a>
                 " for every component."
@@ -464,7 +456,6 @@ pub fn App() -> impl IntoView {
             {move || {
                 if let (Some(ref id), Some(ref d)) = (selected_id.get(), data.get()) {
                     if let Some(n) = d.nodes.iter().find(|n| n.node_id == *id) {
-                        let bw = format_bandwidth(n.bandwidth);
                         let m = n.metrics.as_ref();
                         let uptime = m.map(|m| format_uptime(m.uptime_secs)).unwrap_or_default();
                         let conns = m.map(|m| m.connections_accepted.to_string()).unwrap_or_default();
@@ -483,7 +474,6 @@ pub fn App() -> impl IntoView {
                                     <span class="tab-label">"Node: " {short_id}"..."</span>
                                     <span class="stat" style="margin-left:8px">{ntype}</span>
                                     <span class="stat" style="margin-left:8px">{addr}</span>
-                                    <span class="stat" style="margin-left:8px">"BW: "<strong>{bw}</strong></span>
                                     <span class="stat" style="margin-left:8px">"Up: "<strong>{uptime}</strong></span>
                                     <span class="stat" style="margin-left:8px">"Conn: "<strong>{conns}</strong></span>
                                     <span class="stat" style="margin-left:8px">"Str: "<strong>{streams}</strong></span>
