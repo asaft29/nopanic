@@ -1,0 +1,26 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 13
+skinparam linetype ortho
+
+title Arhitectura generală a sistemului
+
+actor "Browser" as browser
+
+rectangle "Client\n(SOCKS5 :1080)" as client
+rectangle "Discovery\nService\n(gRPC :8080)" as discovery
+
+rectangle "Entry\nRelay" as entry
+rectangle "Middle\nRelay" as middle
+rectangle "Exit\nRelay" as exit
+
+cloud "Internet" as internet
+
+browser -down-> client : SOCKS5
+client -right-> discovery : gRPC
+client -down-> entry : TCP / TLS
+entry -down-> middle : TCP / TLS
+middle -down-> exit : TCP / TLS
+exit -down-> internet : TCP
+@enduml

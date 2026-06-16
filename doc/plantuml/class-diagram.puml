@@ -1,0 +1,107 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 11
+skinparam classBorderColor #555555
+skinparam interfaceBorderColor #2a7a2a
+skinparam enumBorderColor #c07020
+
+title Class Diagram — Dependency Injection & Trait-based Architecture
+
+' ── Traits (interfaces) ──
+interface TransportLayer {
+  + connect(addr, fp) -> RelayStream
+}
+
+interface StreamAcceptor {
+  + accept(tcp) -> RelayStream
+}
+
+interface NodeStore {
+  + register(desc)
+  + remove(id)
+  + get_random_path(N) -> path
+  + update_heartbeat(id, metrics)
+  + get_all_nodes()
+  + cleanup_stale(timeout)
+  + get_stats()
+  + is_ready() -> bool
+}
+
+interface NtorHandshaker {
+  + client_handshake(eph, pub, relay, auth) -> SessionKey
+  + server_handshake(eph, secret, pub) -> SessionKey
+}
+
+interface StatefulCipher {
+  + apply_forward(data)
+  + apply_backward(data)
+}
+
+' ── Implementations ──
+class TcpTlsTransport {
+  cfg(tls)
+}
+class RawTcpTransport {
+  cfg(not tls)
+}
+class TlsAcceptor {
+  cfg(tls)
+}
+class RawTcpAcceptor {
+  cfg(not tls)
+}
+class NodeRegistryStore {
+  Arc<RwLock<NodeRegistry>>
+}
+class NopanicNtorHandshaker
+class CipherPair {
+  AES-128-CTR
+}
+
+' ── Enums ──
+enum CircuitHandler {
+  Entry(EntryCircuitHandler)
+  Middle(MiddleCircuitHandler)
+  Exit(ExitCircuitHandler)
+}
+
+' ── Key structs ──
+class CircuitBuilder {
+  + build(id, path, transport, handshaker) -> Circuit
+}
+class CircuitPool {
+  + select_circuit() -> Circuit
+  + replace_circuit(id) -> Circuit
+}
+class OnionKeys {
+  + onion_encrypt(data)
+  + onion_decrypt(data)
+}
+class DiscoveryServiceImpl {
+  + register_node(desc)
+  + get_random_path(N)
+}
+
+' ── Relationships ──
+TransportLayer <|.. TcpTlsTransport
+TransportLayer <|.. RawTcpTransport
+StreamAcceptor <|.. TlsAcceptor
+StreamAcceptor <|.. RawTcpAcceptor
+NodeStore <|.. NodeRegistryStore
+NtorHandshaker <|.. NopanicNtorHandshaker
+StatefulCipher <|.. CipherPair
+
+CircuitBuilder --> TransportLayer : uses
+CircuitBuilder --> NtorHandshaker : uses
+DiscoveryServiceImpl --> NodeStore : uses
+CircuitHandler *--> StatefulCipher : per-hop
+OnionKeys *--> CipherPair : N instances
+
+note top of TcpTlsTransport
+  Feature-gated transport
+  cfg(tls) = TcpTlsTransport
+  cfg(not tls) = RawTcpTransport
+  Same pattern for StreamAcceptor
+end note
+@enduml

@@ -1,0 +1,37 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 9
+
+title Raw TCP — 514-byte cell (Wireshark view)
+
+rectangle "<b>00 00\n01 FE</b>" as len #BBDEFB
+rectangle "<b>00 00\n00 03</b>" as cid #C8E6C9
+rectangle "<b>00 07</b>" as sid #FFF9C4
+rectangle "<b>12</b>" as cmd #FFCDD2
+rectangle "<b>01 CF</b>" as plen #E1BEE7
+rectangle "<b>D1 F7\nAD 92</b>" as dig #FFE0B2
+rectangle "<b>AES Encrypted\nPayload (463B)\n...</b>" as data #A5D6A7
+rectangle "<b>Zero\nPadding\n(37B)</b>" as pad #E0E0E0
+
+len -right-> cid
+cid -right-> sid
+sid -right-> cmd
+cmd -right-> plen
+plen -right-> dig
+dig -right-> data
+data -right-> pad
+
+note bottom of data
+  <b>AES-128-CTR encrypted</b>
+  Cannot be read without the
+  session key derived from ntor
+end note
+
+legend right
+  <#BBDEFB> Length (4B)   <#C8E6C9> Circuit ID (4B)
+  <#FFF9C4> Stream ID (2B) <#FFCDD2> Command (1B)
+  <#E1BEE7> Payload Len   <#FFE0B2> Digest (4B)
+  <#A5D6A7> Payload (463B) <#E0E0E0> Padding (37B)
+end legend
+@enduml

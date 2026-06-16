@@ -1,0 +1,31 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 9
+
+title TLS — Encrypted view (Wireshark)
+
+rectangle "<b>17 03 03\n02 13</b>" as hdr #FFCDD2
+rectangle "<b>Encrypted Application Data</b>\n(531 bytes)" as data #E0E0E0
+
+hdr -right-> data
+
+note bottom of hdr
+  <b>TLS Record Header (5B)</b>
+  Content Type: 0x17 (App Data)
+  Version: 0x0303 (TLS 1.2)
+  Record Length: 0x0213 (531)
+end note
+
+note bottom of data
+  <b>Entire 514-byte cell hidden here</b>
+  — Length, Circuit ID, Command,
+  Stream ID, Digest, Payload —
+  all encrypted with AES-GCM.
+  Observer cannot read any of it.
+end note
+
+legend right
+  <#FFCDD2> TLS Header     <#E0E0E0> Encrypted Data
+end legend
+@enduml

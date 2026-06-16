@@ -1,0 +1,23 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 10
+
+start
+
+:GetPath(N) — group by type;
+
+if (≥1 Entry, ≥1 Exit, ≥N-2 Middle?) then (no)
+    :Error;
+    stop
+else (yes)
+endif
+
+:Pick Entry, Exit (by BW);
+:Exclude IP + operator;
+:Pick Middle nodes (by BW, not excluded);
+
+:Return [E .. X];
+
+stop
+@enduml

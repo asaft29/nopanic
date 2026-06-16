@@ -1,91 +1,45 @@
-@startuml tor-component-architecture
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 13
+skinparam packageBorderColor #555555
+skinparam nodeBorderColor #555555
+skinparam cloudBorderColor #555555
 
-left to right direction
+title Deployment Architecture
 
-!define RECTANGLE class
+actor "Browser" as browser
+cloud "Internet" as internet
 
-skinparam componentStyle rectangle
-skinparam backgroundColor #FEFEFE
-skinparam component {
-    BackgroundColor<<browser>> #FFCCCC
-    BorderColor<<browser>> #E74C3C
-    BackgroundColor<<client>> #CCFFCC
-    BorderColor<<client>> #2ECC71
-    BackgroundColor<<directory>> #FFE5CC
-    BorderColor<<directory>> #F39C12
-    BackgroundColor<<node>> #E5CCFF
-    BorderColor<<node>> #9B59B6
-    BackgroundColor<<web>> #E5E5E5
-    BorderColor<<web>> #34495E
+frame "Local Machine" {
+    agent "Client" as client
 }
 
-title Component Architecture
+frame "DigitalOcean" as droplet {
+    node "Caddy" as caddy
+    node "Discovery" as discovery
 
-package "User Environment" {
-    [Browser] as Browser <<browser>>
-}
-
-package "Tor Client" {
-    [Tor Client] as Client <<client>>
-
-    component "Client Internals" {
-        [SOCKS5 Server] as SOCKS5
-        [Stream Manager] as StreamMgr
-        [Circuit Manager] as CircuitMgr
-        [Onion Encryptor] as Onion
-        [Directory Client] as DirClient
+    package "Docker" {
+        rectangle "3× Entry\n(:9001-3)" as entries
+        rectangle "3× Middle\n(:9101-3)" as middles
+        rectangle "3× Exit\n(:9201-3)" as exits
     }
 }
 
-package "Directory Service" {
-    [Directory Server] as Directory <<directory>>
-    database "Node Registry" as Registry
-    Directory --> Registry
-}
+browser -down-> client
+note left on link : SOCKS5
+client -down-> discovery : gRPC
+client -down-> entries : TCP / TLS
+entries -down-> middles : TCP / TLS
+middles -down-> exits : TCP / TLS
+exits -down-> internet : TCP
+browser .down.> caddy : HTTPS
+caddy -down-> discovery : HTTP
 
-package "Relay Network" {
-    [Entry Node] as Entry <<node>>
-    [Middle Node] as Middle <<node>>
-    [Exit Node] as Exit <<node>>
-}
-
-package "Internet" {
-    [Website] as Web <<web>>
-}
-
-Browser --> SOCKS5 : "SOCKS5 request"
-SOCKS5 --> StreamMgr : "New connection"
-StreamMgr --> CircuitMgr : "Stream ID + destination"
-CircuitMgr --> DirClient
-CircuitMgr --> Onion : "Encrypt"
-
-SOCKS5 <-- StreamMgr : "Routed data"
-StreamMgr <-- CircuitMgr : "Stream ID + data"
-CircuitMgr <-- Onion : "Decrypted"
-
-DirClient .[#gray]..> Directory : "Query nodes"
-Entry .[#gray]..> Directory : "Register"
-Middle .[#gray]..> Directory : "Register"
-Exit .[#gray]..> Directory : "Register"
-
-Onion --> Entry : "[E(E(E(data)))]"
-Entry --> Middle : "[E(E(data))]"
-Middle --> Exit : "[E(data)]"
-Exit --> Web : "data"
-
-Onion <-- Entry : "[E(E(E(response)))]"
-Entry <-- Middle : "[E(E(response))]"
-Middle <-- Exit : "[E(response)]"
-Exit <-- Web : "response"
-
-Browser <-- SOCKS5 : "HTTP response"
-
-legend right
-  |= Notation |= Meaning |
-  | E(data) | Encrypted data |
-  | data | Plaintext (no encryption) |
-  | → | Forward path (request) |
-  | ← | Return path (response) |
-endlegend
-
+note bottom of entries
+  Discovery selects entry, middle,
+  and exit independently per circuit.
+  Any entry can connect to any middle,
+  any middle to any exit.
+end note
 @enduml

@@ -1,0 +1,31 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor transparent
+skinparam defaultFontSize 13
+skinparam linetype ortho
+skinparam rectangle {
+    BorderColor #555555
+    BackgroundColor<<core>> #E8F0FE
+    BackgroundColor<<relay>> #E6F4EA
+}
+
+title Arhitectura generală a sistemului nopanic
+
+actor "Browser" as browser
+
+rectangle "Client\nnopanic" <<core>> as client
+rectangle "Discovery\nService" <<core>> as discovery
+
+rectangle "Entry\nRelay" <<relay>> as entry
+rectangle "Middle\nRelay" <<relay>> as middle
+rectangle "Exit\nRelay" <<relay>> as exit
+
+cloud "Internet" as internet
+
+browser -down-> client : "SOCKS5"
+client -right-> discovery : "gRPC"
+client -down-> entry : "TCP / TLS"
+entry -down-> middle : "TLS"
+middle -down-> exit : "TLS"
+exit -down-> internet : "TCP"
+@enduml
