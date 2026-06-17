@@ -15,6 +15,8 @@ COPY services/proto ./services/proto
 COPY services/discovery ./services/discovery
 COPY services/relay-node ./services/relay-node
 COPY services/tor-client ./services/tor-client
+RUN mkdir -p tools/bench-client/src && touch tools/bench-client/src/main.rs
+COPY tools/bench-client/Cargo.toml ./tools/bench-client/
 
 RUN cargo build --release -p discovery
 
@@ -34,7 +36,6 @@ RUN mkdir -p /app/data
 
 EXPOSE 8080
 
-ENV RUST_LOG=${RUST_LOG}
-ENV CONSENSUS_PATH=${CONSENSUS_PATH}
+ENV RUST_LOG=info
 
 CMD ["discovery"]

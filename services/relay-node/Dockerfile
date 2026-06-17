@@ -16,6 +16,8 @@ COPY Cargo.toml Cargo.lock ./
 
 # Copy all services (workspace requires all members to be present)
 COPY services ./services
+RUN mkdir -p tools/bench-client/src && touch tools/bench-client/src/main.rs
+COPY tools/bench-client/Cargo.toml ./tools/bench-client/
 
 # Build the relay-node in release mode
 RUN cargo build --release --package relay-node
