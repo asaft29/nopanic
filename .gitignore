@@ -27,5 +27,6 @@ services/*/data/
 *.md
 referat/
 lucrare/
+csv/
 todo.txt
 

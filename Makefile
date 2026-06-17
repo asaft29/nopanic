@@ -6,6 +6,11 @@
 #   make lint                      Format check + clippy (CI parity)
 #   make fix                       Auto-fix formatting
 #
+#   make bench-circuit             Criterion bench: circuit build time
+#   make bench-latency             Display pre-recorded latency CSV
+#   make bench-summary             Generate gnuplot summary.dat from CSV
+#   make bench-plot                Generate all 4 SVG plots for thesis
+#
 #   make discovery-tui             Discovery service with TUI dashboard
 #   make relay-entry-tui           Entry relay with TUI on port 9001
 #   make relay-middle-tui          Middle relay with TUI on port 9101
@@ -61,6 +66,27 @@ fix:
 
 clean:
 	cargo clean
+
+# ── Benchmarks ───────────────────────────────────────────────────────────────
+
+.PHONY: bench-circuit bench-latency bench-summary bench-plot
+
+BENCH_CSV      ?= csv/latency.csv
+BENCH_DROPLET  ?= csv/latency-droplet.csv
+BENCH_SUMMARY  ?= csv/latency-summary.dat
+BENCH_PLOT_DIR ?= doc/img/plots
+
+bench-circuit:
+	cargo bench -p tor-client
+
+bench-latency:
+	cargo run -p bench-client -- --read-csv $(BENCH_CSV)
+
+bench-summary:
+	cargo run -p bench-client -- --read-csv $(BENCH_CSV) --output-summary $(BENCH_SUMMARY)
+
+bench-plot:
+	cargo run -p bench-client -- --read-csv $(BENCH_CSV) --plot $(BENCH_PLOT_DIR)
 
 # ── Discovery ────────────────────────────────────────────────────────────────
 
@@ -122,7 +148,7 @@ client-droplet:
 .PHONY: demo demo-rotation
 
 demo:
-	bash scripts/demo_generic.sh $(N)
+	bash scripts/demo-generic.sh $(N)
 
 demo-rotation:
 	bash scripts/demo_rotation.sh

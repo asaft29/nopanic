@@ -6,6 +6,7 @@ members = [
     "services/discovery",
     "services/relay-node",
     "services/tor-client",
+    "tools/bench-client",
 ]
 
 [workspace.lints.clippy]

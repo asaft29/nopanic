@@ -1,0 +1,20 @@
+[package]
+name = "bench-client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+reqwest = { version = "0.12", features = ["socks"] }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+indicatif = "0.17"
+tabled = "0.19"
+owo-colors = "4"
+plotters = { version = "0.3", default-features = false, features = [
+    "svg_backend",
+    "line_series",
+    "point_series",
+    "all_elements",
+    "full_palette",
+] }
