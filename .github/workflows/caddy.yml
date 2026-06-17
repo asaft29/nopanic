@@ -11,19 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Caddy with rate-limit module
-        run: |
-          docker build -t caddy-validate -f- . <<'EOF'
-            FROM caddy:builder AS builder
-            RUN xcaddy build --with github.com/mholt/caddy-ratelimit
-            FROM caddy:latest
-            COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-          EOF
-
       - name: Validate Caddyfile
         run: |
           docker run --rm \
             -e DOMAIN=example.com \
             -v $PWD/Caddyfile:/etc/caddy/Caddyfile:ro \
-            caddy-validate \
+            caddy:latest \
             caddy validate --config /etc/caddy/Caddyfile

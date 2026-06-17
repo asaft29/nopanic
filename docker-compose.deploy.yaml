@@ -297,7 +297,7 @@ services:
 
   # ---- Caddy (HTTPS reverse proxy for dashboard) ----
   caddy:
-    image: ghcr.io/asaft29/tor-caddy:latest
+    image: caddy:latest
     container_name: tor-caddy
     ports:
       - "80:80"
