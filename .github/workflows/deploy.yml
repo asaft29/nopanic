@@ -8,6 +8,7 @@ env:
   REGISTRY: ghcr.io
   DISCOVERY_IMAGE: ghcr.io/asaft29/tor-discovery
   RELAY_IMAGE: ghcr.io/asaft29/tor-relay
+  CADDY_IMAGE: ghcr.io/asaft29/tor-caddy
 
 jobs:
   build:
@@ -48,3 +49,13 @@ jobs:
           tags: ${{ env.RELAY_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Build and push Caddy (with rate limiting)
+        run: |
+          docker build -t ${{ env.CADDY_IMAGE }}:latest -f- . <<'EOF'
+            FROM caddy:builder AS builder
+            RUN xcaddy build --with github.com/mholt/caddy-ratelimit
+            FROM caddy:latest
+            COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+          EOF
+          docker push ${{ env.CADDY_IMAGE }}:latest

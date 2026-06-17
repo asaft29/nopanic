@@ -13,5 +13,13 @@
         Referrer-Policy "no-referrer"
     }
 
+    rate_limit {
+        zone dashboard {
+            key {remote_host}
+            events 30
+            window 1m
+        }
+    }
+
     reverse_proxy discovery:8081
 }
